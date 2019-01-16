@@ -1,0 +1,393 @@
+<?php
+class Checkout extends CI_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->library('form_validation');
+
+    }
+
+    public function index()
+    { 
+        $data['title']='Checkout';
+        if(count($this->cart->contents()) == 0){
+            $this->session->set_flashdata('order_error', 'Your shopping cart is empty, add to cart before check out.');
+            redirect(site_url('/product'));
+        }
+        else{
+             $data['cart'] = $this->cart->contents();
+             $data['product'] = $this->com_model->get_records('tbl_item',$where='',$order='',$lim=6);
+
+            $data['scat'] = $this->com_model->get_records('tbl_supercategory',$where='',$order='scat_name');
+            $data['cat'] = $this->com_model->get_records('tbl_category',$where='',$order='cat_name');
+             $this->load->view('shop/shop-checkout', $data);
+        }
+    }
+
+    public function pay(){
+        $order='
+        <p>Dear User,</p>
+<p>Your orders was successfully received.</p>
+<p>Details of your order are given below:</p>
+<p><br></p>
+<p><b><br></b></p>
+        ';
+        
+        $this->form_validation->set_rules('first_name', 'First name', 'trim|required');
+        $this->form_validation->set_rules('last_name', 'Last name', 'trim|required');
+     $this->form_validation->set_rules('fname', 'Contact Person name', 'trim|required');
+     $this->form_validation->set_rules('phone', 'Phone number', 'trim|required');
+     $this->form_validation->set_rules('email_address', 'Email', 'trim|required|valid_email');
+     $this->form_validation->set_rules('state', 'State', 'trim|required');
+     $this->form_validation->set_rules('address', 'Shipping address', 'trim|required');
+    if ($this->form_validation->run() == FALSE)
+                {
+                        $this->index();
+                }
+                else
+                {
+                 $table = 'tbl_customers';
+                 $options = [
+                     'cost' => 11,
+                 ];
+                $password='1100!jf@';
+                $password = password_hash(trim($password), PASSWORD_BCRYPT, $options);
+                $email = $this->input->post('email_address');
+                $firstname = $this->input->post('first_name');
+                $lastname = $this->input->post('last_name');
+
+                $where = array('email_address' => $email, 'password' => $password, 'first_name'=>$firstname, 'last_name'=>$lastname );
+                $check = array('email_address'=> $email);
+                    $select = $this->com_model->get_records($table,$check);
+                    if(count($select) == 0){
+                    $this->com_model->insertdata($table, $where);
+
+                    $registration='<p>Dear '.$firstname.'</p>
+                        <p>Thanks for patronising&nbsp; Xown Store (The best online IT shopping).</p>
+                        <p>Your login details into Xown store are given below:</p>
+                        <p>Username: <b>'.$email.'</b></p>
+                        <p>Password: <b>'.$password.'</b></p>
+                        <p><b><br></b></p>';
+
+                    $this->load->library('email');
+                    $this->email->from('customercare@xownsolutions.com', 'Xownsolutions Ltd.');
+                    $this->email->to($email);
+                    $this->email->cc('kayode.faluyi@xownsolutions.com');
+                    $this->email->bcc('customercare@xownsolutions.com');
+
+                    $this->email->subject('Xown Store Registration');
+                    $this->email->message($registration);
+
+                    $this->email->send();
+                    //Email here
+                    }
+                    $order_key=uniqid(rand());
+
+                    $order_id =  $order_key;
+                    $address = $this->input->post('address').', '.$this->input->post('state');
+                    $phone = $this->input->post('phone');
+                    $contact_person=$this->input->post('fname');
+                    $user = $this->com_model->get_records('tbl_customers', array('email_address' => $email));
+                    $ins = array(
+                        'customer_ID' => $user[0]['customer_ID'],
+                        'shipping_address' => $address,
+                        'contact_person'=>$contact_person,
+                        'shipping_phone' => $phone,
+                        'order_id'=>$order_id,
+                    );
+                    $this->com_model->insertdata('tbl_shipping_address', $ins);
+
+                    $data['user'] = $this->com_model->get_records('tbl_customers', array('email_address' => $this->session->email));
+
+                   $custid = $user[0]['customer_ID'];
+                   /* 
+                    $ship = $this->com_model->get_records('tbl_shipping_address', array('shipping_address_ID' => $this->session->userdata('shipping')));
+                    $shippingadd = $ship[0]['shipping_address'];
+                    $shippingphone = $ship[0]['shipping_phone'];
+                    $track = uniqid();*/
+                    
+                   $track=uniqid(rand());
+
+                    $cart = $this->cart->contents();
+                    $grand_total = '';
+                    foreach ($cart as $c) {
+
+            $itemid = $c['id'];
+            $qty = $c['qty'];
+            $price = $c['price'];
+            $total= $c['subtotal'];
+           
+            $insorder = array(
+            'item_ID' => $itemid,
+            'price' => $price,
+            'quantity' => $qty,
+            'customer_ID' => $custid,
+            'tracking_number' => $track,
+            'total_price' => $total,
+            'payment_type_ID'=>$this->input->post('cash'),
+            'phone1' => $phone,
+            'shipping_address' => $address,
+        );
+            $orderid = $this->com_model->insertid('tbl_orders', $insorder);
+        }
+        if($this->input->post('cash')==1){
+           $this->session->set_flashdata('order_success', 'Order Placement successful');
+            redirect($_SERVER['HTTP_REFERER']); 
+        }else{
+            $charge=$this->input->post('charges');
+            $charge= $charge * 100;
+            $result = array();
+            //Set other parameters as keys in the $postdata array
+            $postdata =  array('email' => $email, 'amount' => $charge, "reference" =>$track );
+            $url = "https://api.paystack.co/transaction/initialize";
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL,$url);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));  //Post Fields
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $headers = [
+              'Authorization: Bearer sk_live_8cdfd27bbc295d90e11612ce00a1ff0cc8437575',
+              'Content-Type: application/json',
+
+            ];
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            $request = curl_exec ($ch);
+
+            curl_close ($ch);
+
+            if ($request) {
+              $result = json_decode($request, true);
+                header('Location: ' . $result['data']['authorization_url']);
+              //print_r($result);
+            }
+
+        }
+
+          }
+}
+
+    public function verify(){
+        $result = array();
+        //The parameter after verify/ is the transaction reference to be verified
+        $url = 'https://api.paystack.co/transaction/verify/'. $_GET['reference'];
+         
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt(
+        $ch, CURLOPT_HTTPHEADER, [
+            
+        'Authorization: Bearer pk_live_74e6964c74f0ce4aa4426812c374bbdc8ba1a987']
+        );
+        $request = curl_exec($ch);
+        curl_close($ch);
+         
+        if ($request) {
+        $result = json_decode($request, true);
+        }
+         
+        if (array_key_exists('data', $result) && array_key_exists('status', $result['data']) && ($result['data']['status'] === 'success')) {
+            $this->cart->destroy();
+            $ins = array(
+            'payment_status_ID' => 2,
+            );
+            $this->com_model->updatedata('tbl_orders',$ins,array('tracking_number' => $_GET['reference']));
+            $this->session->set_flashdata('order_success', 'Transaction was successful');
+            redirect($_SERVER['HTTP_REFERER']);
+        //Perform necessary action
+        }else{
+        $this->session->set_flashdata('order_error', 'Transaction not successful');
+            redirect(site_url('checkout'));
+        }
+    }
+
+    public function getarea()
+    {
+        $q = $_REQUEST['q'];
+        $data['area'] = $this->com_model->get_records('tbl_locals', array('state_id' => $q));
+        $this->load->view('checkout/getarea', $data);
+
+    }
+
+    public function addshipping()
+    {
+        $local = $this->input->post('locals');
+        $address = $this->input->post('address');
+        $phone = $this->input->post('phone');
+        $user = $this->com_model->get_records('tbl_customers', array('email_address' => $this->session->email));
+        $ins = array(
+            'customer_ID' => $user[0]['customer_ID'],
+            'shipping_address' => $address,
+            'local_ID' => $local,
+            'shipping_phone' => $phone);
+        $this->com_model->insertdata('tbl_shipping_address', $ins);
+        $this->session->set_flashdata('shipaddress', 'Adress added successfully');
+        redirect($_SERVER['HTTP_REFERER']);
+
+    }
+
+    public function shippingaddress()
+    {
+        // echo $this->input->post('shipaddressno');
+        $newdata = array(
+            'shipping' => $this->input->post('shipaddressno')
+
+        );
+        $this->session->set_userdata($newdata);
+
+        redirect($_SERVER['HTTP_REFERER']);
+    }
+
+    public function cancel()
+    {
+        $this->session->unset_userdata('shipping');
+        redirect($_SERVER['HTTP_REFERER']);
+
+    }
+
+    public function confirm()
+    {
+        $data['user'] = $this->com_model->get_records('tbl_customers', array('email_address' => $this->session->email));
+        $custid = $data['user'][0]['customer_ID'];
+        $ship = $this->com_model->get_records('tbl_shipping_address', array('shipping_address_ID' => $this->session->userdata('shipping')));
+        $shippingadd = $ship[0]['shipping_address'];
+        $shippingphone = $ship[0]['shipping_phone'];
+        $track = uniqid();
+        $cart = $this->cart->contents();
+        $grand_total = '';
+        foreach ($cart as $c) {
+
+            $grand_total = $grand_total + $c['subtotal'];
+        }
+        $total = $grand_total;
+        $insorder = array(
+            'customer_ID' => $custid,
+            'tracking_number' => $track,
+            'total_price' => $total,
+            'phone1' => $shippingphone,
+            'shipping_address' => $shippingadd,
+            'order_date' => date('Y-m-d')
+
+        );
+        $orderid = $this->com_model->insertid('tbl_orders', $insorder);
+        foreach ($cart as $c) {
+            $itemid = $c['id'];
+            $qty = $c['qty'];
+            $price = $c['price'];
+            $ins2 = array(
+                'order_ID' => $orderid,
+                'item_ID' => $itemid,
+                'order_price' => $price,
+                'order_quantity' => $qty
+
+            );
+            $item = $this->com_model->get_records('tbl_item',array('item_ID' => $itemid));
+            if($qty > $item[0]['item_quantity']){
+                $this->session->unset_userdata('shipping');
+                $newdata = array(
+                    'ordersuccess' => true,
+                    'ordermessage' => 'Your Order could not be processed'
+
+
+                );
+                $this->session->set_flashdata($newdata);
+                redirect(site_url('/checkout'));
+            }
+            $this->com_model->insertdata('tbl_order_item', $ins2);
+            $this->com_model->updatedata('tbl_item',array('item_quantity' => $item[0]['item_quantity']- $qty ), array('item_ID' =>$itemid));
+        }
+
+        $this->session->unset_userdata('shipping');
+        $newdata = array(
+            'ordersuccess' => true
+
+        );
+        $this->session->set_flashdata($newdata);
+        redirect(site_url('/checkout'));
+    }
+
+    public function getlogin()
+    {
+        $pass = $_REQUEST['pass'];
+        $email = $_REQUEST['email'];
+        $options = [
+            'cost' => 11,
+        ];
+
+
+        //  echo $password;
+        //$password = md5($this->input->post('password'));
+        $where = array('email_address' => trim($email));
+        $select = $this->com_model->get_records('tbl_customers', $where);
+
+        if (count($select) == 1 && $select[0]['password'] == '') {
+
+            $this->session->set_flashdata('login', 'Use facebook link to login to this account');
+            // var_dump($select);
+            $data['message'] = 'Use facebook link to login to this account';
+        } else {
+            $nwhere = array('email_address' => $email);
+            $nsel = $this->com_model->get_records('tbl_customers', $nwhere);
+            $password = password_verify(trim($pass), $nsel[0]['password']);
+            if (count($nsel) == 1 && $password == true) {
+                $this->session->fname = $nsel[0]['first_name'];
+                $this->session->lname = $nsel[0]['last_name'];
+                $this->session->email = $nsel[0]['email_address'];
+                $this->session->userid = $nsel[0]['customer_ID'];
+                $this->session->login = TRUE;
+
+                $data['message'] = "Login successful";
+            } else {
+                $data['message'] = "Invalid Login";
+            }
+
+        }
+        $this->load->view('getlogin',$data);
+    }
+    public function login()
+    {
+        if (isset($_GET['page'])) {
+            $red = $_GET['page'];
+        }
+        $options = [
+            'cost' => 11,
+        ];
+
+
+        //  echo $password;
+        //$password = md5($this->input->post('password'));
+        $where = array('email_address' => trim($this->input->post('email')));
+        $select = $this->com_model->get_records('tbl_customers', $where);
+
+        if (count($select) == 1 && $select[0]['password'] == '') {
+
+            $this->session->set_flashdata('badlogin', 'Use facebook link to login to this account');
+            // var_dump($select);
+            redirect(site_url() . '/cart');
+        } else {
+            $nwhere = array('email_address' => $this->input->post('email'));
+            $nsel = $this->com_model->get_records('tbl_customers', $nwhere);
+            $password = password_verify(trim($this->input->post('password')), $nsel[0]['password']);
+            if (count($nsel) == 1 && $password ==true) {
+                $this->session->fname = $nsel[0]['first_name'];
+                $this->session->lname = $nsel[0]['last_name'];
+                $this->session->email = $nsel[0]['email_address'];
+                $this->session->userid = $nsel[0]['customer_ID'];
+                $this->session->login = TRUE;
+
+                redirect(site_url() . '/cart');
+            } else {
+                $this->session->set_flashdata('badlogin', 'Email and password mismatch');
+                redirect(site_url() . '/cart');
+
+            }
+        }
+    }
+
+
+}

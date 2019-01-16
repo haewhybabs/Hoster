@@ -1,0 +1,194 @@
+a,
+a:hover,
+a:focus,
+.base-text-color,
+.comment-reply,
+.accordion-item.active span,
+.accordion-item:hover span,
+.faq-tab nav a.active,
+.blog-item .testimonial:before,
+.footer address a,
+#footer-style-1 a:hover
+{
+	color: #edc214;
+}
+
+#navigation li:not(.menu-item-signup) a:after,
+#navigation.navigation-style-3 #nav-menu,
+#menu-toggler span,
+#menu-toggler span:before,
+#menu-toggler span:after,
+.base-bg-color,
+.custom-btn:before,
+.btn-play:hover,
+.accordion-item.active span i,
+.accordion-item:hover span i,
+.tab-container.default nav a:hover,
+.tab-container.default nav a.active,
+.jp-pause:before,
+.jp-pause:after,
+.form-search-2 button[type=submit]:hover + .domain-search .trigger i,
+.form-search-2 button[type=submit]:focus + .domain-search .trigger i,
+.saSlider > .indicators > .wrap > i.active:before,
+.saSlider-nav .saSlider-arrow:hover,
+.slide-nav:hover
+{
+	background-color: #edc214;
+}
+
+#option-set a.selected,
+#option-set a:hover,
+.custom-btn,
+.btn-play:hover,
+.tab-container.default nav a:hover,
+.tab-container.default nav a.active,
+.saSlider > .indicators > .wrap > i.active,
+.saSlider > .indicators > .wrap > i:hover,
+.saSlider-nav .saSlider-arrow:hover,
+.slide-nav:hover
+{
+	border-color: #edc214;
+}
+
+.jp-play { border-left-color: #edc214; }
+
+/* custom-list */
+
+.custom-list li:before
+{
+	content: "";
+	position: absolute;
+	top: 1px;
+	left: 0;
+	width: 18px;
+	height: 17px;
+	background: url(../../images/ico/color_4/list_bg%402x.png);
+
+	-webkit-background-size: 100% 100%;
+	   -moz-background-size: 100% 100%;
+	     -o-background-size: 100% 100%;
+	        background-size: 100% 100%;
+}
+
+/* faq-tabs */
+
+.faq-tab nav .item_1 i:before
+{
+	width: 61px;
+	height: 53px;
+	background-image: url(../../images/ico/color_4/1%402x.png);
+}
+
+.faq-tab nav .item_2 i:before
+{
+	width: 60px;
+	height: 45px;
+	background-image: url(../../images/ico/color_4/2%402x.png);
+}
+
+.faq-tab nav .item_3 i:before
+{
+	width: 58px;
+	height: 57px;
+	background-image: url(../../images/ico/color_4/3%402x.png);
+}
+
+.faq-tab nav .item_4 i:before
+{
+	width: 61px;
+	height: 61px;
+	background-image: url(../../images/ico/color_4/4%402x.png);
+}
+
+/* list_with_icon-4 */
+
+.list_with_icon-4 .list-item i.ico-5:before
+{
+	width: 49px;
+	height: 43px;
+	background-image: url(../../images/ico/color_4/5%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-6:before
+{
+	width: 49px;
+	height: 37px;
+	background-image: url(../../images/ico/color_4/6%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-7:before
+{
+	width: 48px;
+	height: 45px;
+	background-image: url(../../images/ico/color_4/7%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-8:before
+{
+	width: 49px;
+	height: 49px;
+	background-image: url(../../images/ico/color_4/8%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-9:before
+{
+	width: 53px;
+	height: 43px;
+	background-image: url(../../images/ico/color_4/9%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-10:before
+{
+	width: 49px;
+	height: 41px;
+	background-image: url(../../images/ico/color_4/10%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-12:before
+{
+	width: 49px;
+	height: 44px;
+	background-image: url(../../images/ico/color_4/12%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-13:before
+{
+	width: 48px;
+	height: 49px;
+	background-image: url(../../images/ico/color_4/13%402x.png);
+}
+
+.list_with_icon-4 .list-item i.ico-14:before
+{
+	width: 49px;
+	height: 49px;
+	background-image: url(../../images/ico/color_4/14%402x.png);
+}
+
+/* list_with_icon-6 */
+
+.list_with_icon-6 .list-item i.ico:before
+{
+	content: "";
+	display: block;
+	width: 100%;
+	height: 100%;
+	background-image: url(../../images/ico/color_4/11%402x.png);
+}
+
+/* reviews-slider */
+
+.reviews-slider-container:before { background-image: url(../../images/ico/color_4/15%402x.png); }
+
+/* --------------------------------
+			Responsive
+-------------------------------- */
+
+@media only screen and (max-width:767px) {
+
+	#navigation.navigation-style-1 #nav-menu,
+	#navigation.navigation-style-2 #nav-menu
+	{
+		background-color: #edc214;
+	}
+}
